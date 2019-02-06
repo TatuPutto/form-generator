@@ -1,5 +1,5 @@
 import { combineReducers } from 'redux';
-import { update } from './util/immutable-array-utils';
+import { update, updateActiveField } from './util/immutable-array-utils';
 
 const initialElements = [{
   id: 0,
@@ -41,24 +41,31 @@ const initialFields = [
     id: 0,
     rowId: 1,
     editing: false,
-    width: 6,
-    type: undefined
+    gridClass: 'col-sm-6',
+    type: undefined,
+    validate: true
   },
   {
     id: 1,
     rowId: 1,
     editing: false,
-    width: 6,
-    type: undefined
+    gridClass: 'col-sm-6',
+    type: undefined,
+    validate: true
   }
 ];
 
 const fields = (state = initialFields, action) => {
   switch (action.type) {
+    case 'RESET_FIELD':
+      return updateActiveField(state, (field) => {
+        return createEmptyField(field.id);
+      });
     case 'CREATE':
       return state.concat(createEmptyField(state.length));
+    case 'CHANGE':
+      return updateActiveField(state, action.key, action.value);
     case 'EDIT':
-    console.log('@EDIT:', action);
       return state.map(field => {
         if (field.id === action.fieldId) {
           return {
@@ -69,16 +76,51 @@ const fields = (state = initialFields, action) => {
         } else {
           return {
             ...field,
-            editing: false
+            editing: false,
+            type: field.type === 'PENDING' ? undefined : field.type
           };
         }
+      });
+    case 'SET_FIELD_TYPE_TEXT':
+      return updateActiveField(state, (field) => {
+        return {
+          ...field,
+          type: 'TEXT',
+          subtype: 'PLAIN'
+        };
+      });
+    case 'SET_FIELD_SUBTYPE':
+      return updateActiveField(state, (field) => {
+        return {
+          ...field,
+          subtype: action.subtype
+        };
       });
     default:
       return state;
   }
 };
 
-export default combineReducers({ elements, rows, fields });
+const initialConfig = {
+  subtypeOptionsVisible: true
+};
+
+const config = (state = initialConfig, action) => {
+  switch (action.type) {
+    case 'TOGGLE_SUBTYPE_OPTIONS':
+    case 'SET_FIELD_SUBTYPE':
+      return {
+        ...state,
+        subtypeOptionsVisible: !state.subtypeOptionsVisible
+      };
+    default:
+      return state;
+  }
+};
+
+
+
+export default combineReducers({ elements, rows, fields, config });
 
 
 ////
@@ -87,8 +129,9 @@ const createEmptyField = (id) => {
   return {
     id: id,
     editing: true,
-    width: 6,
-    type: 'PENDING'
+    gridClass: 'col-sm-6',
+    type: 'PENDING',
+    validate: true
   };
 };
 

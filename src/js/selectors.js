@@ -19,3 +19,8 @@ export const combineElementsWithFields = createSelector(
     });
   }
 );
+
+export const getActiveField = createSelector(
+  getFields,
+  (fields) => fields.find(field => field.editing)
+);

@@ -6,38 +6,18 @@ import isValidSsn from 'validate-finnish-ssn';
 import BuildRow from './BuildRow';
 import BuildPlaceholder from './BuildPlaceholder';
 import NewFieldButton from './NewFieldButton';
-
-
+import TextBuilder from './TextBuilder';
 
 class BuildComponent extends PureComponent {
-  createStructuralComponent = () => {
-    const element = this.props.element;
-    console.log('@createStructuralComponent', element);
-
-    switch (element.type) {
-      case 'HR':
-        return <hr />
-      default:
-        return null;
-    }
-  }
-
-  createLabel = () => {
-    return (
-      <label className="text-uppercase">
-        {this.props.element.label || this.props.element.placeholder}
-      </label>
-    );
-  }
-
   getComponentFactory = () => {
     const element = this.props.element;
-    console.log(element.type);
+
     switch (element.type) {
       case 'ROW':
         return BuildRow;
       case 'TEXT':
-        return this.createTextField(element);
+        return TextBuilder;
+        // return this.createTextField(element);
       case 'CHECKBOX-BTN':
         return this.createCheckboxButtonField(element);
       case 'RADIO-BTN':
@@ -45,30 +25,11 @@ class BuildComponent extends PureComponent {
       case 'BTN-GROUP':
         return this.createButtonGroup(element);
       case 'HR':
-        return <hr />
+        return <hr />;
       case 'PENDING':
         return BuildPlaceholder;
       default:
         return NewFieldButton;
-    }
-  }
-
-  createField = () => {
-    const element = this.props.element;
-
-    // console.log(element);
-
-    switch (element.type) {
-      case 'TEXT':
-        return this.createTextField(element);
-      case 'CHECKBOX-BTN':
-        return this.createCheckboxButtonField(element);
-      case 'RADIO-BTN':
-        return this.createRadioButtonField(element);
-      case 'BTN-GROUP':
-        return this.createButtonGroup(element);
-      default:
-        return 'input';
     }
   }
 

@@ -5,7 +5,7 @@ import FormBuilder from './views/FormBuilderView';
 import store from './configure-store';
 
 // import '../less/bootstrap.css';
-import '../less/styles.css';
+import '../less/styles.less';
 
 const App = () => (
   <Provider store={store}>
