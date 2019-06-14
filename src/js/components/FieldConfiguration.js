@@ -1,9 +1,14 @@
 import React, { Component, Fragment } from 'react';
 import { connect } from 'react-redux';
-import { Badge, Button } from 'reactstrap';
+import { Badge, Button, InputGroup, InputGroupAddon, InputGroupText, Input } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import cn from 'classnames';
-import { getActiveField } from '../selectors';
+import { getSelectedField } from '../selectors';
+import {
+  TEXT,
+  TEXT_PLAIN,
+  TEXT_SSN
+} from '../types';
 
 class FieldConfiguration extends Component {
 
@@ -77,9 +82,9 @@ class FieldConfiguration extends Component {
                   <div className="row form-group">
                     <div className="col-lg-4">
                       <div
-                        onClick={() => selectFieldSubtype('PLAIN')}
+                        onClick={() => selectFieldSubtype(TEXT_PLAIN)}
                         className={cn('subtype__option', {
-                          'subtype__option--selected': field.subtype === 'PLAIN'
+                          'subtype__option--selected': field.subtype === TEXT_PLAIN
                         })}
                       >
                         <FontAwesomeIcon icon="font" className="mr-2" />
@@ -88,9 +93,9 @@ class FieldConfiguration extends Component {
                     </div>
                     <div className="col-lg-4">
                       <div
-                        onClick={() => selectFieldSubtype('SSN')}
+                        onClick={() => selectFieldSubtype(TEXT_SSN)}
                         className={cn('subtype__option', {
-                          'subtype__option--selected': field.subtype === 'SSN'
+                          'subtype__option--selected': field.subtype === TEXT_SSN
                         })}
                       >
                         <div className="subtype__option_title">
@@ -193,6 +198,27 @@ class FieldConfiguration extends Component {
                   onChange={e => changeFieldKeyValue('placeholder', e.target.value)}
                 />
               </div>
+
+              {/*}
+              <hr />
+
+              <div className="row">
+                <div className="col-sm-6">
+                  <div className="form-group">
+                    <label>
+                      Length
+                    </label>
+                    <InputGroup>
+                      <Input placeholder="Min" />
+                      <InputGroupAddon>&ndash;</InputGroupAddon>
+                      <Input placeholder="Max" />
+                    </InputGroup>
+                  </div>
+                </div>
+              </div>
+
+              */}
+
               </Fragment>
             }
 
@@ -240,7 +266,7 @@ class FieldConfiguration extends Component {
 
 export default connect(
   (state) => ({
-    field: getActiveField(state),
+    field: getSelectedField(state),
     config: state.builder.config
   }),
   (dispatch) => ({

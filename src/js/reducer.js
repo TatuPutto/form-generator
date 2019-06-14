@@ -1,70 +1,108 @@
 import { combineReducers } from 'redux';
-import { update, updateActiveField } from './util/immutable-array-utils';
+import { update, updateActiveField, updateLastItem } from './util/immutable-array-utils';
+import newId from './util/generate-id';
 
 const initialElements = [{
-  id: 0,
+  id: newId(),
   type: 'ROW',
-  children: [0, 1]
+  // children: [0]
 }];
 
 const elements = (state = initialElements, action) => {
   switch (action.type) {
-    case 'ADD':
-      return state.map(field => ({
-        ...field,
-        editing: field.id === action.fieldId ? true : false
-      }));
+    case 'ADD_NEW_ROW':
+      return state.concat([{
+        id: action.id,
+        type: 'ROW'
+      }]);
     default:
       return state;
   }
 };
 
-const initialRows = [{
-  id: 0,
-  fields: [0, 1]
-}];
+// const initialRows = [{
+//   id: 0,
+//   fields: [0]
+// }];
+//
+// const rows = (state = initialRows, action) => {
+//   switch (action.type) {
+//     case 'ADD_ROW':
+//       console.log('add');
+//       return state.concat([{
+//         id: action.rowId,
+//         type: 'ROW',
+//         fields: [action.fieldId]
+//       }]);
+//     // case 'EDIT':
+//     //   return state.map(field => ({
+//     //     ...field,
+//     //     editing: field.id === action.fieldId ? true : false
+//     //   }));
+//     default:
+//       return state;
+//   }
+// };
 
-const rows = (state = initialRows, action) => {
-  switch (action.type) {
-    // case 'EDIT':
-    //   return state.map(field => ({
-    //     ...field,
-    //     editing: field.id === action.fieldId ? true : false
-    //   }));
-    default:
-      return state;
+const initialFieldsById = {
+  [newId()]: {
+    parentId: initialElements[0].id,
+    selected: false,
+    initialized: false,
+    gridClass: 'col-sm-6',
+    width: 6,
+    type: undefined,
+    validate: true
   }
 };
 
-const initialFields = [
-  {
-    id: 0,
-    rowId: 1,
-    editing: false,
-    gridClass: 'col-sm-6',
-    type: undefined,
-    validate: true
-  },
-  {
-    id: 1,
-    rowId: 1,
-    editing: false,
-    gridClass: 'col-sm-6',
-    type: undefined,
-    validate: true
-  }
-];
-
-const fields = (state = initialFields, action) => {
+const fields = (state = initialFieldsById, action) => {
   switch (action.type) {
     case 'RESET_FIELD':
       return updateActiveField(state, (field) => {
         return createEmptyField(field.id);
       });
-    case 'CREATE':
+    case 'CREATE_EMPTY_FIELD':
       return state.concat(createEmptyField(state.length));
+    case 'CREATE_INITIALIZER_FIELD':
+      return state.concat(createInitializerField(action.parentId));
     case 'CHANGE':
       return updateActiveField(state, action.key, action.value);
+    case 'FIELDS/INITIALIZE':
+      return state.map(field => {
+        if (field.id === action.fieldId) {
+          return {
+            ...field,
+            initialized: true,
+            selected: true
+          };
+        } else {
+          return {
+            ...field,
+            selected: false
+          };
+        }
+      });
+    case 'FIELDS/SELECT':
+      return state.map(field => {
+        if (field.id === action.fieldId) {
+          return {
+            ...field,
+            selected: true
+          };
+        } else {
+          return {
+            ...field,
+            selected: false
+          };
+        }
+      });
+
+    case 'CHANGE_FIELD_WIDTH':
+
+      function adjustRowContentWidth()
+
+
     case 'EDIT':
       return state.map(field => {
         if (field.id === action.fieldId) {
@@ -120,19 +158,33 @@ const config = (state = initialConfig, action) => {
 
 
 
-export default combineReducers({ elements, rows, fields, config });
+export default combineReducers({ elements, /* rows, */ fields, config });
 
 
 ////
 
-const createEmptyField = (id) => {
+const createEmptyField = (id, parentId) => {
   return {
     id: id,
+    parentId: parentId,
+    initialized: true,
     editing: true,
     gridClass: 'col-sm-6',
-    type: 'PENDING',
-    validate: true
+    width: 6,
+    type: 'PENDING'
   };
 };
 
-// return update(fields, action.fieldId, )
+const createInitializerField = (parentId) => {
+  return {
+    // id: newId(),
+    parentId: parentId,
+    editing: false,
+    type: undefined,
+    gridClass: 'col-sm-6',
+    width: 6
+    // width: {
+    //
+    // },
+  };
+};

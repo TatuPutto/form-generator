@@ -35,3 +35,16 @@ export const updateActiveField = (array, keyOrCb, value) => {
     });
   }
 };
+
+export const updateLastItem = (array, key, value) => {
+  return array.map((item, i, self) => {
+    if (i === self.length - 1) {
+      return {
+        ...item,
+        [key]: value
+      };
+    } else {
+      return item;
+    }
+  });
+};

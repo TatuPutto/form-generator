@@ -168,14 +168,15 @@ td:hover {
 }
 
 
-.field-preview.field-preview--selected {
-  padding: 15px;
-  // border: 1px solid #966100;
-  border: 1px dotted #8e5d02;
+.field-preview {
+  padding: 1rem;
   border-radius: 0.25rem;
+}
 
-  & .form-control {
-    background: transparent;
-    border: 1px solid #505050;
-  }
+.field-preview.field-preview--initialized {
+  border: 1px solid #565656;
+}
+
+.field-preview.field-preview--selected {
+  border: 1px dotted #8e5d02;
 }

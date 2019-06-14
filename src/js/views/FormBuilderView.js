@@ -3,9 +3,7 @@ import FormBuilder from '../components/FormBuilder';
 import { combineElementsWithFields } from '../selectors';
 
 const mapStateToProps = (state) => ({
-  elements: combineElementsWithFields(state),
-  rows: state.builder.rows,
-  fields: state.builder.fields
+  elements: combineElementsWithFields(state)
 });
 
 
