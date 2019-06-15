@@ -1,15 +1,27 @@
 import { createSelector } from 'reselect';
+import get from 'lodash/get';
+import { arrayFrom } from './util/immutable';
 
-export const getElements = (state) => state.builder.elements;
-export const getFields = (state) => state.builder.fields;
 
-export const getRows = createSelector(
-  getElements,
+export const getContent = (state) => get(state, ['builder', 'content']);
+
+export const getElementsAsArray = createSelector(
+  getContent,
+  (content) => arrayFrom(get(content, 'elements'))
+);
+
+export const getFieldsAsArray = createSelector(
+  getContent,
+  (content) => arrayFrom(get(content, 'fields'))
+);
+
+export const getRowsAsArray = createSelector(
+  getElementsAsArray,
   (elements) => elements.filter(element => element.type === 'ROW')
 );
 
 export const combineRowsWithFields = createSelector(
-  [getRows, getFields],
+  [getRowsAsArray, getFieldsAsArray],
   (rows, fields) => {
     return rows.map(row => ({
       ...row,
@@ -19,7 +31,7 @@ export const combineRowsWithFields = createSelector(
 );
 
 export const combineElementsWithFields = createSelector(
-  [getElements, getFields],
+  [getElementsAsArray, getFieldsAsArray],
   (elements, fields) => {
     return elements.map(element => {
       if (element.type === 'ROW') {
@@ -35,6 +47,6 @@ export const combineElementsWithFields = createSelector(
 );
 
 export const getSelectedField = createSelector(
-  getFields,
+  getFieldsAsArray,
   (fields) => fields.find(field => field.selected)
 );

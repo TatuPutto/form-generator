@@ -48,3 +48,29 @@ export const updateLastItem = (array, key, value) => {
     }
   });
 };
+
+export const arrayFrom = (obj, order = []) => {
+  if (!Object.keys(obj).length) {
+    return [];
+  }
+
+  if (!order.length) {
+    return Object.keys(obj).map(key => {
+      return {
+        ...obj[key],
+        id: key
+      };
+    });
+  }
+
+  return order.map(id => {
+    return {
+      ...obj[id],
+      id: id,
+    };
+  });
+};
+
+// export const setIn = (obj, ) => {
+//
+// };

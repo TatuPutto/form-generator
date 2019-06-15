@@ -47,8 +47,8 @@ class Preview extends PureComponent {
 export default connect(
   () => {},
   (dispatch) => ({
-    select: (fieldId) => dispatch({ type: 'FIELDS/SELECT', fieldId }),
-    changeWidth: (fieldId, width) => dispatch({ type: 'CHANGE_FIELD', id: fieldId, key: 'width', value: width }),
+    select: (fieldId) => dispatch({ type: 'SELECT_FIELD', fieldId }),
+    changeWidth: (fieldId, width) => dispatch({ type: 'CHANGE_FIELD', fieldId, key: 'width', value: width }),
   })
 )(Preview)
 

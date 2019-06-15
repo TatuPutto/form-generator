@@ -24,10 +24,10 @@ const rowIsFull = (row) => {
   const fields = row.children;
   const totalWidthOfFields = fields.reduce((total, nextField) => total += nextField.width, 0);
 
-  if (totalWidthOfFields < 12) {
-    return false;
-  } else {
+  if (totalWidthOfFields >= 12) {
     return true;
+  } else {
+    return false;
   }
 };
 
@@ -54,21 +54,25 @@ export default connect(
   }),
   (dispatch) => ({
     initializeField: (rows, fields, fieldId, rowId) => {
+      console.log('ROWS', rows)
 
       const row = rows.find(row => row.id === rowId);
       const newRowId = newId();
 
-      dispatch({ type: 'FIELDS/INITIALIZE', fieldId: fieldId /*fields.length - 1*/ });
+      dispatch({ type: 'INITIALIZE_FIELD', fieldId });
+      dispatch({ type: 'SELECT_FIELD', fieldId });
 
       if (shouldAddInitializerFieldToCurrentRow(row)) {
+        console.log('shouldAddInitializerFieldToCurrentRow: ', shouldAddInitializerFieldToCurrentRow(row));
         // console.log('should add to current row');
-        dispatch({ type: 'CREATE_INITIALIZER_FIELD', parentId: rowId });
+        dispatch({ type: 'CREATE_INITIALIZER_FIELD', fieldId: newId(), parentId: rowId });
       }
 
       if (shouldAddNewRow(rows, fieldId)) {
-        // console.log('should add new row');
-        dispatch({ type: 'ADD_NEW_ROW', id: newRowId });
-        dispatch({ type: 'CREATE_INITIALIZER_FIELD', parentId: newRowId });
+        console.log('should add new row');
+
+        dispatch({ type: 'ADD_NEW_ROW', elementId: newRowId });
+        dispatch({ type: 'CREATE_INITIALIZER_FIELD', fieldId: newId(), parentId: newRowId });
       }
 
       // } else {
