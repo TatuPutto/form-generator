@@ -1,3 +1,12 @@
+export const push = (array, items) => {
+  console.log('@push', array);
+  if (Array.isArray(items)) {
+    return array.concat(items);
+  } else {
+    return array.concat([items]);
+  }
+};
+
 export const update = (array, id, key, value) => {
   return array.map(item => {
     if (item.id === id) {
@@ -66,11 +75,45 @@ export const arrayFrom = (obj, order = []) => {
   return order.map(id => {
     return {
       ...obj[id],
-      id: id,
+      id: id
     };
   });
 };
 
-// export const setIn = (obj, ) => {
-//
-// };
+export const objectFrom = (array = []) => {
+  if (!array.length) {
+    return {};
+  }
+
+  const object = array.reduce((obj, item) => {
+    return obj[item.id] = item;
+  }, {});
+  console.log('object', object);
+  return object;
+};
+
+export const set = (obj = {}, path, value, depth = 0) => {
+  if (Array.isArray(path)) {
+    if (path.length > 1) {
+      if (depth < path.length - 1) {
+        if (depth === 0) {
+          return {
+            ...obj,
+            [path[depth]]: set(obj[path[depth]], path, value, depth + 1)
+          };
+        } else {
+          return {
+            ...obj[path[depth]],
+            [path[depth + 1]]: set(obj[path[(depth + 1)]], path, value, depth + 1)
+          };
+        }
+      } else {
+        return { ...obj, [path[depth]]: value };
+      }
+    } else {
+      return { ...obj, [path[depth]]: value };
+    }
+  } else {
+    return { ...obj, [path]: value };
+  }
+};

@@ -23,10 +23,10 @@ class FormBuilder extends React.Component {
     return (
       <div className="container-fluid">
         <div className="row">
-          <div className="col-md-4">
+          {/*}<div className="col-md-4">
             <FieldConfiguration />
-          </div>
-          <div className="col-md-8 form-content">
+          </div>*/}
+          <div id="form-preview" className="col-md-12 form-content">
             <form>
               {this.renderElements()}
             </form>

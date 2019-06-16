@@ -169,14 +169,33 @@ td:hover {
 
 
 .field-preview {
-  padding: 1rem;
+  display: flex;
+  align-items: center;
+  height: 60px;
+  // padding: 1rem;
   border-radius: 0.25rem;
+  border: 1px dotted transparent;
 }
 
 .field-preview.field-preview--initialized {
-  border: 1px solid #565656;
+  border-color: #565656;
 }
 
 .field-preview.field-preview--selected {
-  border: 1px dotted #8e5d02;
+  border-color: #8e5d02;
+}
+
+.field-preview.field-preview--resizing {
+  border-color: red;
+}
+
+.field-preview__content {
+  flex-grow: 1;
+  padding: 0 1rem;
+}
+
+.field-preview__resize {
+  width: 5px;
+  height: 100%;
+  cursor: e-resize;
 }

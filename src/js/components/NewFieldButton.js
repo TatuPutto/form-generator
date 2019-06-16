@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { combineRowsWithFields } from '../selectors';
+import createGridClass from '../util/create-grid-class';
 import newId from '../util/generate-id';
 
 
@@ -22,7 +23,7 @@ const shouldAddInitializerFieldToCurrentRow = (row) => {
 
 const rowIsFull = (row) => {
   const fields = row.children;
-  const totalWidthOfFields = fields.reduce((total, nextField) => total += nextField.width, 0);
+  const totalWidthOfFields = fields.reduce((total, nextField) => total += nextField.breakpoints['sm'], 0);
 
   if (totalWidthOfFields >= 12) {
     return true;
@@ -33,9 +34,10 @@ const rowIsFull = (row) => {
 
 const NewFieldButton = (props) => {
   const { initializeField, element } = props;
+  const gridClass = createGridClass(element.breakpoints);
   // console.log('props', props);
   return (
-    <div className="col-6">
+    <div className={gridClass}>
       <button
         type="button"
         className="btn btn-outline-primary w-100"
@@ -54,10 +56,11 @@ export default connect(
   }),
   (dispatch) => ({
     initializeField: (rows, fields, fieldId, rowId) => {
+      console.log('fieldId', fieldId);
       console.log('ROWS', rows)
 
       const row = rows.find(row => row.id === rowId);
-      const newRowId = newId();
+      const newRowId = (rows.length + 1).toString(); /*newId(); */
 
       dispatch({ type: 'INITIALIZE_FIELD', fieldId });
       dispatch({ type: 'SELECT_FIELD', fieldId });

@@ -1,16 +1,27 @@
 import { combineReducers } from 'redux';
-import { update, updateActiveField, updateLastItem } from './util/immutable';
+import { get } from 'lodash';
+import {
+  set,
+  push,
+  arrayFrom,
+  objectFrom,
+  update,
+  updateActiveField,
+  updateLastItem
+} from './util/immutable';
 import newId from './util/generate-id';
 
-const initialRowId = newId();
+const initialRowId = '1' /* newId(); */
 const initialFieldId = newId();
 
 const initialElements = {
   [initialRowId]: {
     type: 'ROW',
-    childrenOrder: [initialRowId],
-    // children: [0]
   }
+};
+
+const initialFieldOrder = {
+  [initialRowId]: [initialFieldId]
 };
 
 const initialFields = {
@@ -18,8 +29,13 @@ const initialFields = {
     parentId: initialRowId,
     selected: false,
     initialized: false,
-    gridClass: 'col-sm-6',
-    width: 6,
+    gridClass: 'col-lg-4 col-md-6 col-xs-12',
+    breakpoints: {
+      lg: 3,
+      md: 4,
+      sm: 6,
+      xs: 12
+    },
     type: undefined,
     validate: true
   }
@@ -27,398 +43,342 @@ const initialFields = {
 
 const initialState = {
   elements: initialElements,
-  fields: initialFields
+  fields: initialFields,
+  fieldOrder: initialFieldOrder
 };
 
 
-const elements = (state = initialState, action) => {
-  switch (action.type) {
-    case 'ADD_NEW_ROW':
+const actionsMap = (state, action) => {
+
+
+  const actions = {
+    ['ADD_NEW_ROW']: () => {
       return {
         ...state,
         elements: {
           ...state.elements,
           [action.elementId]: createEmptyRow()
+        },
+        fieldOrder: {
+          ...state.fieldOrder,
+          [action.elementId]: []
         }
       };
-      // return state..concat([{
-      //   id: action.id,
-      //   type: 'ROW'
-      // }]);
-
-
-
-    //// FIELDS ////
-
-    case 'CREATE_INITIALIZER_FIELD':
+    },
+    ['CREATE_INITIALIZER_FIELD']: () => {
       return {
         ...state,
-        elements: {
-          ...state.elements,
-          [action.parentId]: {
-            ...state.elements[action.parentId],
-            childrenOrder: state.elements[action.parentId].childrenOrder.concat([action.fieldId])
-          }
+        fieldOrder: {
+          ...state.fieldOrder,
+          [action.parentId]: push(state.fieldOrder[action.parentId], action.fieldId)
         },
         fields: {
           ...state.fields,
           [action.fieldId]: createInitializerField(action.parentId)
         }
       };
-    // case 'CHANGE':
-    //   return updateActiveField(state, action.key, action.value);
-    case 'INITIALIZE_FIELD':
+    },
+    ['INITIALIZE_FIELD']: () => {
+      return setFieldProp(action.fieldId, 'initialized', true);
+    },
+    ['SELECT_FIELD']: () => {
+      return togglePropValueForOtherFields(action.fieldId, 'selected', true);
+    },
+    ['START_RESIZE']: () => {
+      const field = getField(action.fieldId);
+      const rowFieldIds = state.fieldOrder[field.parentId];
+      return setPropValueForFields(rowFieldIds, 'resizing', true);
+    },
+    ['SET_TEMPORARY_WIDTH']: () => {
+      const field = getField(action.fieldId);
+      const fieldWidth = field.temporaryWidth || getWidthForCurrentBreakpoint(field.breakpoints);
+      // const fieldWidth = fieldTemporaryWidth || getWidthForCurrentBreakpoint(field.breakpoints);
+      const widthChange = Math.abs(action.width - fieldWidth);
+      const widthIncreased = action.width > fieldWidth;
+
+      // const rowFieldIds = state.fieldOrder[field.parentId];
+      // const adjacentFieldId = findAdjacentFieldId(action.field, action.direction, widthIncreased);
+      // const adjacentField = getField(adjacentFieldId);
+
+      return setFieldProp(action.fieldId, 'temporaryWidth', action.width);
+
+      // return setPropValueForFields(rowFieldIds, 'resizing', true);
+    },
+    ['STOP_RESIZE']: () => {
+      const field = getField(action.fieldId);
+      const fieldWidth = field.temporaryWidth;
+      console.log('FIELDWIDTH', fieldWidth)
+      const containerWidth = document.getElementById('form-preview').offsetWidth;
+      const colWidth = containerWidth / 12;
+      console.log('COLWIDTH', colWidth) // 62
+
+      const closestColWidth = Math.round(fieldWidth / colWidth);
+      const fieldBreakpoints = createBreakpoints(closestColWidth);
+      console.log('FIELDBREAKPOINTS', fieldBreakpoints)
+
+      const updatedFields = Object.keys(state.fields).reduce((updatedFields, nextFieldId) => {
+        if (nextFieldId === action.fieldId) {
+          console.log('found resize stop target', {
+            ...state.fields[nextFieldId],
+            resizing: false,
+            temporaryWidth: null,
+            breakpoints: fieldBreakpoints
+          });
+          return {
+            ...updatedFields,
+            [nextFieldId]: {
+              ...state.fields[nextFieldId],
+              resizing: false,
+              temporaryWidth: null,
+              breakpoints: fieldBreakpoints
+            }
+          };
+        } else {
+          return {
+            ...updatedFields,
+            [nextFieldId]: {
+              ...state.fields[nextFieldId],
+              resizing: false,
+              temporaryWidth: null
+            }
+          };
+        }
+      }, {})
+
+      console.log('updatedFields', updatedFields);
+
+      return {
+        ...state,
+        fields: updatedFields
+      };
+
+
+      // let newState = setFieldProp(action.fieldId, 'breakpoints', fieldBreakpoints);
+      // newState = setPropValueForAllFields('resizing', false)
+      // console.log('newState', newState);
+      // return newState;
+    },
+    ['CHANGE_FIELD_WIDTH']: () => {
+      const currentBreakpoint = 'sm';
+
+      const { direction } = action;
+      const field = getField(action.fieldId);
+      const fieldWidth = getWidthForCurrentBreakpoint(field.breakpoints);
+      const widthChange = Math.abs(action.width - fieldWidth);
+      const widthIncreased = action.width > fieldWidth;
+      // const parentRow = getElement(field.parentId);
+      const fieldBreakpoints = {
+        ...field.breakpoints,
+        [currentBreakpoint]: widthIncreased ? fieldWidth + widthChange : fieldWidth - widthChange
+      };
+
+      const adjacentFieldId = findAdjacentFieldId(field, direction, widthIncreased);
+      const adjacentField = getField(adjacentFieldId.toString());
+      const adjacentFieldWidth = getWidthForCurrentBreakpoint(adjacentField.breakpoints);
+      const adjacentFieldBreakpoints = {
+        ...adjacentField.breakpoints,
+        [currentBreakpoint]: widthIncreased ? adjacentFieldWidth - widthChange : adjacentFieldWidth + widthChange
+      };
+
+
       return {
         ...state,
         fields: {
           ...state.fields,
           [action.fieldId]: {
-            ...state.fields[action.fieldId],
-            initialized: true
+            ...field,
+            breakpoints: fieldBreakpoints
+          },
+          [adjacentFieldId]: {
+            ...state.fields[adjacentFieldId],
+            breakpoints: adjacentFieldBreakpoints
           }
         }
-      };
+      }
+    }
+  }
 
-      // return setIn(state, ['fields', action.fieldId], setIn(state, []))
-      //
-      // return state.map(field => {
-      //   if (field.id === action.fieldId) {
-      //     return {
-      //       ...field,
-      //       initialized: true,
-      //       selected: true
-      //     };
-      //   } else {
-      //     return {
-      //       ...field,
-      //       selected: false
-      //     };
-      //   }
-      // });
-    case 'SELECT_FIELD':
-      return {
-        ...state,
-        fields: Object.keys(state.fields).map((fieldId) => {
-          if (fieldId === action.fieldId) {
-            return {
-              ...state.fields[fieldId],
-              selected: true
-            };
-          } else {
-            return {
-              ...state.fields[fieldId],
-              selected: false
-            };
-          }
-        })
-      };
-      // return state.map(field => {
-      //   if (field.id === action.fieldId) {
-      //     return {
-      //       ...field,
-      //       selected: true
-      //     };
-      //   } else {
-      //     return {
-      //       ...field,
-      //       selected: false
-      //     };
-      //   }
-      // });
-      /* eslint-disable */
-    case 'CHANGE_FIELD_WIDTH':
-      // return {
-      //   ...fields,
-      //   [action.fieldId]: {
-      //     ...fields[action.fieldId],
-      //     initialized: true,
-      //     selected: true
-      //   }
-      // };
+  const reduceFn = actions[action.type];
 
-      // function adjustRowContentWidth() {
-      //
-      //   const { width, direction } = action;
-      //
-      //
-      //   const field = fields[action.id];
-      //
-      //
-      //   const fieldWidthIncreased = width > field.width;
-      //
-      //   const parentRow = field.parentId;
-      //   const parentRowFields = parentRow.children;
-      //
-      //   if (fieldWidthIncreased) {
-      //
-      //   }
-      //
-      //   function findAdjacentField() {
-      //
-      //     if (direction === 'LEFT' && fieldWidthIncreased) {
-      //
-      //       // LEFT sibling
-      //       // decrease width of left sibling and increase current
-      //       return fields[]
-      //
-      //     } else if (direction === 'LEFT' && !fieldWidthIncreased) {
-      //
-      //       // RIGHT sibling
-      //       // increase width of right sibling and decrease current
-      //
-      //     } else if (direction === 'RIGHT' && fieldWidthIncreased) {
-      //
-      //       // RIGHT sibling
-      //       // decrease width of right sibling and increase current
-      //
-      //
-      //     } else {
-      //
-      //
-      //       // LEFT sibling
-      //       // increase width of left sibling and decrease current
-      //
-      //     }
-      //
-      //   }
-      //
-      // }
-
-
-
-
-    case 'EDIT':
-      return state.map(field => {
-        if (field.id === action.fieldId) {
-          return {
-            ...field,
-            editing: true,
-            type: field.type ? field.type : 'PENDING'
-          };
-        } else {
-          return {
-            ...field,
-            editing: false,
-            type: field.type === 'PENDING' ? undefined : field.type
-          };
-        }
-      });
-    case 'SET_FIELD_TYPE_TEXT':
-      return updateActiveField(state, (field) => {
-        return {
-          ...field,
-          type: 'TEXT',
-          subtype: 'PLAIN'
-        };
-      });
-    case 'SET_FIELD_SUBTYPE':
-      return updateActiveField(state, (field) => {
-        return {
-          ...field,
-          subtype: action.subtype
-        };
-      });
+  if (!reduceFn) return state;
+  return reduceFn()
+    // case 'EDIT':
+    //   return state.map(field => {
+    //     if (field.id === action.fieldId) {
+    //       return {
+    //         ...field,
+    //         editing: true,
+    //         type: field.type ? field.type : 'PENDING'
+    //       };
+    //     } else {
+    //       return {
+    //         ...field,
+    //         editing: false,
+    //         type: field.type === 'PENDING' ? undefined : field.type
+    //       };
+    //     }
+    //   });
+    // case 'SET_FIELD_TYPE_TEXT':
+    //   return updateActiveField(state, (field) => {
+    //     return {
+    //       ...field,
+    //       type: 'TEXT',
+    //       subtype: 'PLAIN'
+    //     };
+    //   });
+    // case 'SET_FIELD_SUBTYPE':
+    //   return updateActiveField(state, (field) => {
+    //     return {
+    //       ...field,
+    //       subtype: action.subtype
+    //     };
+    //   });
 
     ////////////////
 
-    default:
-      return state;
+
+  ////
+
+  function findAdjacentFieldId(field, direction, widthIncreased) {
+
+    const fieldOrderForRow = state.fieldOrder[field.parentId];
+    const index = fieldOrderForRow.findIndex(fieldId => fieldId === action.fieldId);
+
+    if (direction === 'LEFT' && widthIncreased) {
+      console.log('dir left and widthIncreased');
+      // LEFT sibling
+      // decrease width of left sibling and increase current
+      return fieldOrderForRow[index - 1];
+
+    } else if (direction === 'LEFT' && !widthIncreased) {
+
+      // RIGHT sibling
+      // increase width of right sibling and decrease current
+      return parentRow.childrenOrder[index + 1];
+
+    } else if (direction === 'RIGHT' && widthIncreased) {
+
+      // RIGHT sibling
+      // decrease width of right sibling and increase current
+      return parentRow.childrenOrder[index + 1];
+
+    } else {
+
+      // LEFT sibling
+      // increase width of left sibling and decrease current
+      return parentRow.childrenOrder[index - 1];
+
+    }
+
   }
+
+
+
+  function getElement(id) {
+    return get(state, ['elements', id]);
+  }
+
+  function getElementProp(id, prop) {
+    return get(getElement(id), prop);
+  }
+
+  function setElement(path, value) {
+    return set(state, ['elements', ...path], value);
+  }
+
+  function setElementProp(path, prop, value) {
+    if (Array.isArray(path)) {
+      return set(state, ['elements', ...path], set(getElement(path), prop, value));
+    } else {
+      return set(state, ['elements', path], value);
+    }
+  }
+
+  function getField(id) {
+    return get(state, ['fields', id]);
+  }
+
+  function getFieldProp(id, prop) {
+    return get(getField(id), prop);
+  }
+
+  function setField(path, value) {
+    return set({ ...state }, ['fields', path], value);
+  }
+
+  function setFieldProp(path, prop, value) {
+    if (Array.isArray(path)) {
+      return set({ ...state }, ['fields', ...path], set({ ...getField(path) }, prop, value));
+    } else {
+      return set({ ...state, }, ['fields', path], set({ ...getField(path) }, prop, value));
+    }
+  }
+
+  function setPropValueForFields(fieldIds, prop, value) {
+    const updatedFields = Object.keys(state.fields).reduce((fields, fieldId) => {
+      const field = state.fields[fieldId];
+
+      if (fieldIds.includes(fieldId)) {
+        return {
+          ...fields,
+          [fieldId]: {
+            ...field,
+            [prop]: value
+          }
+        };
+      } else {
+        return {
+          ...fields,
+          [fieldId]: field
+        };
+      }
+    }, {});
+
+    return set(state, 'fields', updatedFields);
+  }
+
+  function setPropValueForAllFields(prop, value) {
+    const updatedFields = Object.keys(state.fields).reduce((fields, fieldId) => {
+      const field = state.fields[fieldId];
+      return {
+        ...fields,
+        [fieldId]: {
+          ...field,
+          [prop]: value
+        }
+      };
+    }, {});
+
+    return set(state, 'fields', updatedFields);
+  }
+
+  function togglePropValueForOtherFields(targetFieldIds, prop, value) {
+    targetFieldIds = Array.isArray(targetFieldIds) ? targetFieldIds : [targetFieldIds];
+    const updatedFields = Object.keys(state.fields).reduce((fields, fieldId) => {
+      const field = state.fields[fieldId];
+      if (targetFieldIds.includes(fieldId)) {
+        return {
+          ...fields,
+          [fieldId]: {
+            ...field,
+            [prop]: value
+          }
+        };
+      } else {
+        return {
+          ...fields,
+          [fieldId]: {
+            ...field,
+            [prop]: !value
+          }
+        };
+      }
+    }, {});
+
+    return set(state, 'fields', updatedFields);
+  }
+
 };
-
-// const initialRows = [{
-//   id: 0,
-//   fields: [0]
-// }];
-//
-// const rows = (state = initialRows, action) => {
-//   switch (action.type) {
-//     case 'ADD_ROW':
-//       console.log('add');
-//       return state.concat([{
-//         id: action.rowId,
-//         type: 'ROW',
-//         fields: [action.fieldId]
-//       }]);
-//     // case 'EDIT':
-//     //   return state.map(field => ({
-//     //     ...field,
-//     //     editing: field.id === action.fieldId ? true : false
-//     //   }));
-//     default:
-//       return state;
-//   }
-// };
-
-// const initialFieldsById = {
-//   [newId()]: {
-//     parentId: initialElements[0].id,
-//     selected: false,
-//     initialized: false,
-//     gridClass: 'col-sm-6',
-//     width: 6,
-//     type: undefined,
-//     validate: true
-//   }
-// };
-//
-// const fieldsReducer = (fields = initialFieldsById, action) => {
-//   switch (action.type) {
-//     // case 'RESET_FIELD':
-//     //   return updateActiveField(state, (field) => {
-//     //     return createEmptyField(field.id);
-//     //   });
-//     // case 'CREATE_EMPTY_FIELD':
-//     //   return state.concat(createEmptyField(state.length));
-//     case 'CREATE_INITIALIZER_FIELD':
-//       return {
-//         ...fields,
-//         [action.id]: createInitializerField(action.parentId)
-//       };
-//     // case 'CHANGE':
-//     //   return updateActiveField(state, action.key, action.value);
-//     case 'INITIALIZE_FIELD':
-//       return {
-//         ...fields,
-//         [action.id]: {
-//           ...fields[action.id],
-//           initialized: true,
-//           selected: true
-//         }
-//       };
-//       //
-//       // return state.map(field => {
-//       //   if (field.id === action.fieldId) {
-//       //     return {
-//       //       ...field,
-//       //       initialized: true,
-//       //       selected: true
-//       //     };
-//       //   } else {
-//       //     return {
-//       //       ...field,
-//       //       selected: false
-//       //     };
-//       //   }
-//       // });
-//     case 'SELECT_FIELD':
-//       return {
-//         ...fields,
-//         [action.id]: {
-//           ...fields[action.id],
-//           selected: true
-//         }
-//       };
-//       // return state.map(field => {
-//       //   if (field.id === action.fieldId) {
-//       //     return {
-//       //       ...field,
-//       //       selected: true
-//       //     };
-//       //   } else {
-//       //     return {
-//       //       ...field,
-//       //       selected: false
-//       //     };
-//       //   }
-//       // });
-//       /* eslint-disable */
-//     case 'CHANGE_FIELD_WIDTH':
-//       // return {
-//       //   ...fields,
-//       //   [action.fieldId]: {
-//       //     ...fields[action.fieldId],
-//       //     initialized: true,
-//       //     selected: true
-//       //   }
-//       // };
-//
-//       function adjustRowContentWidth() {
-//
-//         const { width, direction } = action;
-//
-//
-//         const field = fields[action.id];
-//
-//
-//         const fieldWidthIncreased = width > field.width;
-//
-//         const parentRow = field.parentId;
-//         const parentRowFields = parentRow.children;
-//
-//         if (fieldWidthIncreased) {
-//
-//         }
-//
-//         function findAdjacentField() {
-//
-//           if (direction === 'LEFT' && fieldWidthIncreased) {
-//
-//             // LEFT sibling
-//             // decrease width of left sibling and increase current
-//             return fields[]
-//
-//           } else if (direction === 'LEFT' && !fieldWidthIncreased) {
-//
-//             // RIGHT sibling
-//             // increase width of right sibling and decrease current
-//
-//           } else if (direction === 'RIGHT' && fieldWidthIncreased) {
-//
-//             // RIGHT sibling
-//             // decrease width of right sibling and increase current
-//
-//
-//           } else {
-//
-//
-//             // LEFT sibling
-//             // increase width of left sibling and decrease current
-//
-//           }
-//
-//         }
-//
-//       }
-//
-//
-//
-//
-//     case 'EDIT':
-//       return state.map(field => {
-//         if (field.id === action.fieldId) {
-//           return {
-//             ...field,
-//             editing: true,
-//             type: field.type ? field.type : 'PENDING'
-//           };
-//         } else {
-//           return {
-//             ...field,
-//             editing: false,
-//             type: field.type === 'PENDING' ? undefined : field.type
-//           };
-//         }
-//       });
-//     case 'SET_FIELD_TYPE_TEXT':
-//       return updateActiveField(state, (field) => {
-//         return {
-//           ...field,
-//           type: 'TEXT',
-//           subtype: 'PLAIN'
-//         };
-//       });
-//     case 'SET_FIELD_SUBTYPE':
-//       return updateActiveField(state, (field) => {
-//         return {
-//           ...field,
-//           subtype: action.subtype
-//         };
-//       });
-//     default:
-//       return state;
-//   }
-// };
 
 const initialConfig = {
   subtypeOptionsVisible: true
@@ -438,8 +398,9 @@ const config = (state = initialConfig, action) => {
 };
 
 
+const contentReducer = (state = initialState, action) => actionsMap(state, action);
 
-export default combineReducers({ content: elements, /* rows, */ /*fields: fieldsReducer,*/ config });
+export default combineReducers({ content: contentReducer, /* rows, */ /*fields: fieldsReducer,*/ config });
 
 
 ////
@@ -450,8 +411,8 @@ const createEmptyField = (id, parentId) => {
     parentId: parentId,
     initialized: true,
     editing: true,
-    gridClass: 'col-sm-6',
-    width: 6,
+    gridClass: 'col-lg-4 col-sm-6 col-xs-12',
+    breakpoints: createBreakpoints(),
     type: 'PENDING'
   };
 };
@@ -462,8 +423,8 @@ const createInitializerField = (parentId) => {
     parentId: parentId,
     editing: false,
     type: undefined,
-    gridClass: 'col-sm-6',
-    width: 6
+    gridClass: 'col-lg-4 col-md-6 col-xs-12',
+    breakpoints: createBreakpoints()
     // width: {
     //
     // },
@@ -475,4 +436,39 @@ const createEmptyRow = () => {
     type: 'ROW',
     childrenOrder: []
   }
+}
+
+const createBreakpoints = (width) => {
+  return {
+    lg: width && isCurrentBreakpoint('lg') ? width : 3,
+    md: width && isCurrentBreakpoint('md') ? width : 4,
+    sm: width && isCurrentBreakpoint('sm') ? width : 6,
+    xs: width && isCurrentBreakpoint('xs') ? width : 12,
+  };
+};
+
+const isCurrentBreakpoint = (breakpoint) => {
+  const currentBreakpoint = 'sm';
+  return breakpoint === currentBreakpoint;
+};
+
+
+const updateGridClass = (gridClass, breakpoint, width) => {
+  const gridClassBreakpoints = gridClass.split(' '); // ['col-lg-x', 'col-md-x', ...]
+  return gridClassBreakpoints.reduce((newGridClass, nextBreakpoint) => {
+    if (nextBreakpoint.includes(breakpoint)) { // 'col-lg-x'.includes('lg')
+      return newGridClass += ` ${createGridClassBreakpoint(breakpoint, width)}`
+    } else {
+      return newGridClass += ` ${nextBreakpoint}`;
+    }
+  }, '');
+}
+
+const createGridClassBreakpoint = (breakpoint, width) => {
+  return `col-${breakpoint}-${width}`;
+}
+
+const getWidthForCurrentBreakpoint = (breakpoints) => {
+  const currentBreakpoint = 'sm';
+  return breakpoints[currentBreakpoint];
 }
