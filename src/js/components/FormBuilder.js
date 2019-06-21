@@ -21,7 +21,7 @@ class FormBuilder extends React.Component {
     // console.log('this.props', this.props)
 
     return (
-      <div className="container-fluid">
+      <div className="container" style={{ width: '768px' }}>
         <div className="row">
           {/*}<div className="col-md-4">
             <FieldConfiguration />

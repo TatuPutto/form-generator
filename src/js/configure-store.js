@@ -4,7 +4,7 @@ import { reducer } from 'redux-form';
 import builderReducer from './reducer';
 
 const middlewares = [
-  reduxImmutableStateInvariant(),
+  // reduxImmutableStateInvariant(),
 ];
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 const store = createStore(

@@ -10,6 +10,7 @@ import {
   updateLastItem
 } from './util/immutable';
 import newId from './util/generate-id';
+import { getColWidth, getFieldMinWidth } from './util/field-helpers';
 
 const initialRowId = '1' /* newId(); */
 const initialFieldId = newId();
@@ -87,14 +88,152 @@ const actionsMap = (state, action) => {
     ['START_RESIZE']: () => {
       const field = getField(action.fieldId);
       const rowFieldIds = state.fieldOrder[field.parentId];
-      return setPropValueForFields(rowFieldIds, 'resizing', true);
+
+      return {
+        ...state,
+        fields: Object.keys(state.fields).reduce((updatedFields, nextFieldId) => {
+
+          const field = state.fields[nextFieldId];
+
+          if (rowFieldIds.includes(nextFieldId)) {
+
+            const width = field.breakpoints['sm'];
+            const containerWidth = document.getElementById('form-preview').offsetWidth;
+            const colWidth = containerWidth / 12;
+            const originalWidth = colWidth * width;
+
+            return {
+              ...updatedFields,
+              [nextFieldId]: {
+                ...field,
+                resizing: true,
+                resizeDirection: action.direction,
+                originalWidth: originalWidth,
+                temporaryWidth: originalWidth,
+              }
+            };
+
+          } else {
+            return {
+              ...updatedFields,
+              [nextFieldId]: field
+            };
+
+          }
+
+        }, {})
+      };
+
+
+
+
+
+      // return setPropValueForFields(rowFieldIds, 'resizing', true);
     },
     ['SET_TEMPORARY_WIDTH']: () => {
       const field = getField(action.fieldId);
+      // const fieldResizeArgs = field.resizeArgs;
+      // const { temporaryWidth, originalWidth } = field.resizeArgs;
+
+      // Target field width after the change
+
+      const colWidth = getColWidth();
+      const minWidth = getFieldMinWidth();
+
+
       const fieldWidth = field.temporaryWidth || getWidthForCurrentBreakpoint(field.breakpoints);
+
+      if (fieldWidth <= minWidth) {
+        return state;
+      }
+
       // const fieldWidth = fieldTemporaryWidth || getWidthForCurrentBreakpoint(field.breakpoints);
-      const widthChange = Math.abs(action.width - fieldWidth);
-      const widthIncreased = action.width > fieldWidth;
+      const widthChange = Math.abs(action.width - field.originalWidth);
+
+      // console.log('widthChange: ', widthChange);
+      // console.log('action.direction: ', action.direction);
+
+      const widthIncreased = action.width > field.temporaryWidth;
+
+      // const adjacentFieldId = findAdjacentFieldId(field, action.direction);
+      const fieldOrderForRow = state.fieldOrder[field.parentId];
+
+      const fieldIndex = fieldOrderForRow.findIndex(fieldId => fieldId === action.fieldId);
+      const adjacentFieldIndex = field.resizeDirection === 'RIGHT' ? fieldIndex + 1 : fieldIndex - 1;
+      const adjacentFieldId = fieldOrderForRow[adjacentFieldIndex];
+
+      const adjacentField = getField(adjacentFieldId);
+
+      console.log('adjacentFieldHasRoomToGrow()', adjacentFieldHasRoomToGrow());
+
+      if (!widthIncreased || adjacentFieldHasRoomToGrow()) {
+        return setFieldProp(action.fieldId, 'temporaryWidth', action.width);
+      } else {
+        // console.log('täällä');
+        return {
+          ...state,
+          fields: Object.keys(state.fields).reduce((updatedFields, nextFieldId) => {
+            const field = state.fields[nextFieldId];
+            if (nextFieldId === adjacentFieldId) {
+              console.log('found adjacent element ', widthChange);
+              return {
+                ...updatedFields,
+                [nextFieldId]: {
+                  ...field,
+                  temporaryWidth: field.originalWidth - widthChange
+                }
+              };
+            } else if (nextFieldId === action.fieldId) {
+              return {
+                ...updatedFields,
+                [nextFieldId]: {
+                  ...field,
+                  temporaryWidth: action.width
+                }
+              };
+            } else {
+              return {
+                ...updatedFields,
+                [nextFieldId]: field
+              };
+            }
+          }, {})
+        }
+      }
+
+      // has to decrease adjacent element size
+
+
+
+      function adjacentFieldHasRoomToGrow() {
+
+        // const containerWidth = document.getElementById('form-preview').offsetWidth;
+        // const colWidth = containerWidth / 12;
+
+        const amountOfColsOccupiedByCurrentFieldAfterResize = Math.round(action.width / colWidth);
+        // console.log('@amountOfColsOccupiedByCurrentFieldAfterResize', amountOfColsOccupiedByCurrentFieldAfterResize);
+
+        const fieldIds = state.fieldOrder[field.parentId];
+
+        const rowTotalWidth = fieldIds.reduce((total, nextFieldId) => {
+
+          if (nextFieldId !== action.fieldId) {
+
+            const field = getField(nextFieldId);
+            const fieldWidth = field.breakpoints['sm'];
+            // console.log('FIELDWIDTH', fieldWidth)
+            return total += fieldWidth;
+
+          } else {
+            return total;
+          }
+
+        }, amountOfColsOccupiedByCurrentFieldAfterResize);
+
+        // console.log('rowTotalWidth: ', rowTotalWidth);
+
+        return rowTotalWidth < 12;
+      }
 
       // const rowFieldIds = state.fieldOrder[field.parentId];
       // const adjacentFieldId = findAdjacentFieldId(action.field, action.direction, widthIncreased);
@@ -104,26 +243,26 @@ const actionsMap = (state, action) => {
 
       // return setPropValueForFields(rowFieldIds, 'resizing', true);
     },
-    ['STOP_RESIZE']: () => {
+    ['SAVE_RESIZE']: () => {
       const field = getField(action.fieldId);
       const fieldWidth = field.temporaryWidth;
-      console.log('FIELDWIDTH', fieldWidth)
+      // console.log('FIELDWIDTH', fieldWidth)
       const containerWidth = document.getElementById('form-preview').offsetWidth;
       const colWidth = containerWidth / 12;
-      console.log('COLWIDTH', colWidth) // 62
+      // console.log('COLWIDTH', colWidth) // 62
 
       const closestColWidth = Math.round(fieldWidth / colWidth);
       const fieldBreakpoints = createBreakpoints(closestColWidth);
-      console.log('FIELDBREAKPOINTS', fieldBreakpoints)
+      // console.log('FIELDBREAKPOINTS', fieldBreakpoints)
 
       const updatedFields = Object.keys(state.fields).reduce((updatedFields, nextFieldId) => {
         if (nextFieldId === action.fieldId) {
-          console.log('found resize stop target', {
-            ...state.fields[nextFieldId],
-            resizing: false,
-            temporaryWidth: null,
-            breakpoints: fieldBreakpoints
-          });
+          // console.log('found resize stop target', {
+          //   ...state.fields[nextFieldId],
+          //   resizing: false,
+          //   temporaryWidth: null,
+          //   breakpoints: fieldBreakpoints
+          // });
           return {
             ...updatedFields,
             [nextFieldId]: {
@@ -143,9 +282,7 @@ const actionsMap = (state, action) => {
             }
           };
         }
-      }, {})
-
-      console.log('updatedFields', updatedFields);
+      }, {});
 
       return {
         ...state,
@@ -254,19 +391,19 @@ const actionsMap = (state, action) => {
 
       // RIGHT sibling
       // increase width of right sibling and decrease current
-      return parentRow.childrenOrder[index + 1];
+      return fieldOrderForRow[index + 1];
 
     } else if (direction === 'RIGHT' && widthIncreased) {
 
       // RIGHT sibling
       // decrease width of right sibling and increase current
-      return parentRow.childrenOrder[index + 1];
+      return fieldOrderForRow[index - 1];
 
     } else {
 
       // LEFT sibling
       // increase width of left sibling and decrease current
-      return parentRow.childrenOrder[index - 1];
+      return fieldOrderForRow[index + 1];
 
     }
 

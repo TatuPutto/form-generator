@@ -1,5 +1,4 @@
 export const push = (array, items) => {
-  console.log('@push', array);
   if (Array.isArray(items)) {
     return array.concat(items);
   } else {

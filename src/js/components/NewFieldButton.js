@@ -56,9 +56,6 @@ export default connect(
   }),
   (dispatch) => ({
     initializeField: (rows, fields, fieldId, rowId) => {
-      console.log('fieldId', fieldId);
-      console.log('ROWS', rows)
-
       const row = rows.find(row => row.id === rowId);
       const newRowId = (rows.length + 1).toString(); /*newId(); */
 
@@ -66,14 +63,10 @@ export default connect(
       dispatch({ type: 'SELECT_FIELD', fieldId });
 
       if (shouldAddInitializerFieldToCurrentRow(row)) {
-        console.log('shouldAddInitializerFieldToCurrentRow: ', shouldAddInitializerFieldToCurrentRow(row));
-        // console.log('should add to current row');
         dispatch({ type: 'CREATE_INITIALIZER_FIELD', fieldId: newId(), parentId: rowId });
       }
 
       if (shouldAddNewRow(rows, fieldId)) {
-        console.log('should add new row');
-
         dispatch({ type: 'ADD_NEW_ROW', elementId: newRowId });
         dispatch({ type: 'CREATE_INITIALIZER_FIELD', fieldId: newId(), parentId: newRowId });
       }
