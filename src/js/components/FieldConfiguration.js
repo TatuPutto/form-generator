@@ -25,7 +25,7 @@ class FieldConfiguration extends Component {
       toggleSubtypeOptions
     } = this.props;
 
-    console.log('field', field);
+    // console.log('field', field);
 
     // const types = [
     //   'TEXT',
@@ -34,7 +34,7 @@ class FieldConfiguration extends Component {
     //   'SELECTIZE'
     // ]
 
-    console.log('field is selected:', field && field.type && field.type !== 'PENDING');
+    // console.log('field is selected:', field && field.type && field.type !== 'PENDING');
 
     return (
       <div className="field-configuration">

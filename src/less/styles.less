@@ -169,10 +169,11 @@ td:hover {
 
 
 .preview {
+  position: relative;
   display: flex;
   align-items: center;
-  height: 60px;
-  // padding: 1rem;
+  // height: 60px;
+  padding: 1rem;
   border-radius: 0.25rem;
   border: 1px dotted transparent;
 }
@@ -190,12 +191,27 @@ td:hover {
 }
 
 .preview.preview--row {
-  margin: 0 -15px 15px -15px;
+  // margin: 0 -15px 15px -15px;
+  padding-bottom: 0;
+}
+
+.preview__element-meta {
+  position: absolute;
+  top: -0.35rem;
+  left: 10px;
+  padding: 0px 5px;
+  background: #323232;
+  color: #9a9a9a;
+  font-size: 0.5rem;
+}
+
+.preview__element-meta--selected {
+  color: #9c6500;
 }
 
 .preview__content {
   flex-grow: 1;
-  padding: 0 1rem;
+  // padding: 0 1rem;
 }
 
 .preview__resize {

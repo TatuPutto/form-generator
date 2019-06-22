@@ -1,5 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import Field from './Field';
 import withPreview from './Preview';
 
@@ -24,4 +23,4 @@ const Row = ({ element }) => {
 // }))(Row);
 
 // export default Row;
-export default withPreview(Row)
+export default withPreview(Row);

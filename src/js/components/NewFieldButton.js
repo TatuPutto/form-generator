@@ -39,7 +39,7 @@ const NewFieldButton = (props) => {
   // console.log('props', props);
   // onClick={() => initializeField(props.rows, props.fields, element.id, element.parentId)}
   return (
-    <div className={gridClass}>
+    <div className={gridClass + ' form-group'}>
       <button
         type="button"
         className="btn btn-outline-primary w-100"
@@ -57,17 +57,13 @@ export default connect(
     rows: combineRowsWithFields(state)
   }),
   (dispatch) => ({
-    initializeElement: (elementId, ) => {
+    initializeElement: (elementId) => {
 
       // has to initialize element with type of undefined (maybe row)
       dispatch({ type: 'INITIALIZE_ELEMENT', elementId });
 
-      console.log('täällä');
-
       // has to create new initializer FIELD within row
       dispatch({ type: 'CREATE_INITIALIZER_FIELD', elementId: newId(), parentId: elementId });
-
-      console.log('täällä2');
 
       // has to select newly initializer element
       dispatch({ type: 'SELECT_ELEMENT', elementId });
@@ -81,20 +77,18 @@ export default connect(
       const newRowId = (rows.length + 1).toString(); /*newId(); */
 
       dispatch({ type: 'INITIALIZE_FIELD', fieldId });
-      dispatch({ type: 'SELECT_FIELD', fieldId });
+    //   dispatch({ type: 'SELECT_FIELD', fieldId });
+    //   dispatch({ type: 'SELECT_ELEMENT', elementId: fieldId });
 
-      if (shouldAddInitializerFieldToCurrentRow(row)) {
-        dispatch({ type: 'CREATE_INITIALIZER_FIELD', fieldId: newId(), parentId: rowId });
-      }
+    //   if (shouldAddInitializerFieldToCurrentRow(row)) {
+    //     dispatch({ type: 'CREATE_INITIALIZER_FIELD', fieldId: newId(), parentId: rowId });
+    //   }
+      //
+    //   if (shouldAddNewRow(rows, fieldId)) {
+    //     dispatch({ type: 'ADD_NEW_ROW', elementId: newRowId });
+    //     dispatch({ type: 'CREATE_INITIALIZER_FIELD', fieldId: newId(), parentId: newRowId });
+    //   }
 
-      if (shouldAddNewRow(rows, fieldId)) {
-        dispatch({ type: 'ADD_NEW_ROW', elementId: newRowId });
-        dispatch({ type: 'CREATE_INITIALIZER_FIELD', fieldId: newId(), parentId: newRowId });
-      }
-
-      // } else {
-      //   dispatch({ type: 'CREATE_INITIALIZER_FIELD', parentId: lastElementId });
-      // }
     }
   })
 )(NewFieldButton);

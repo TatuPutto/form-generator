@@ -12,19 +12,20 @@ class Field extends PureComponent {
 
     // console.log(element);
 
+    console.log('jep', element);
+
     if (!element.initialized) {
       return NewFieldButton;
-    } else if (!element.type) {
-      return Placeholder;
     }
 
+    // else if (!element.type) {
+    //     console.log('tääkkä');
+    //   return Placeholder;
+    // }
 
 
-    switch (element.type) {
-      // case 'PENDING':
-      //   return PlaceholderBuilder;
-      // case 'ROW':
-      //   return BuildRow;
+
+    switch (element.fieldType) {
       case 'TEXT':
         return TextField;
         // return this.createTextField(element);

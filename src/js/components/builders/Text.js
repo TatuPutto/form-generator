@@ -1,7 +1,8 @@
-import React, { PureComponent } from 'react';
+import React, { Fragment, PureComponent } from 'react';
 import { Field } from 'redux-form';
 import classnames from 'classnames';
-import Preview from './Preview';
+// import Preview from './Preview';
+import withPreview from './Preview';
 import {
   TEXT_PLAIN,
   TEXT_SSN,
@@ -16,7 +17,7 @@ class Text extends PureComponent {
   createFieldProps = () => {
     const { element } = this.props;
 
-    switch (element.subtype) {
+    switch (element.fieldSubtype) {
       case TEXT_PLAIN:
         return createTextProps(element);
       case TEXT_SSN:
@@ -43,12 +44,19 @@ class Text extends PureComponent {
   // }
 
   render() {
+    //   <Preview element={this.props.element}>
+    // <Field {...this.createFieldProps()} />
+    // </Preview>
+    const fieldProps = this.createFieldProps();
     return (
-      <Preview element={this.props.element}>
-        <Field {...this.createFieldProps()} />
-      </Preview>
+      <Fragment>
+        <label className="upper-label">
+          {fieldProps.label}
+        </label>
+        <input type="text" className="form-control" placeholder={fieldProps.placeholder} />
+      </Fragment>
     );
   }
 }
 
-export default Text;
+export default withPreview(Text);

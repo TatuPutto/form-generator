@@ -160,7 +160,8 @@ const actionsMap = (state, action) => {
         ...state.elements[action.fieldId],
         initialized: true,
         type: 'FIELD',
-        fieldType: 'TEXT'
+        fieldType: 'TEXT',
+        fieldSubtype: 'TEXT_PLAIN'
       });
     },
     ['SELECT_FIELD']: () => {
@@ -502,7 +503,7 @@ const actionsMap = (state, action) => {
   }
 
   function setElement(path, value) {
-    return set(state, ['elements', ...path], value);
+    return set(state, ['elements', path], value);
   }
 
   function setElementProp(path, prop, value) {

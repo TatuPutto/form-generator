@@ -90,9 +90,15 @@ const withPreview = (Component) => {
       return this.props.element.type === 'FIELD'
     }
 
+    select = (e, elementId) => {
+      e.stopPropagation(); // Prevent click from bubbling down to parent element preview.
+      this.props.select(elementId);
+    }
+
 
     render() {
-      console.log('this.props', this.props);
+    //   console.log('this.props', this.props);
+
       const { children, element, select } = this.props;
       const gridClass = this.isResizable() ?
         createGridClass(element.breakpoints): null;
@@ -100,11 +106,14 @@ const withPreview = (Component) => {
         [gridClass]: !element.resizing,
         'col': element.resizing
       });
-      const fieldClassName = classnames('preview', {
+      const elementClassName = classnames('preview', {
         'preview--initialized': element.initialized,
         'preview--selected': element.selected,
         'preview--resizing': element.resizing,
         'preview--row': element.type === ROW
+      });
+      const elementMetaClassName = classnames('preview__element-meta', {
+        'preview__element-meta--selected': element.selected
       });
       const styles = element.resizing ? { width: element.temporaryWidth, maxWidth: element.temporaryWidth } : null;
 
@@ -113,17 +122,22 @@ const withPreview = (Component) => {
           ref={this.ref}
           className={containerClassName}
           style={styles}
-          onClick={() => select(element.id)}
+          onClick={(e) => this.select(e, element.id)}
         >
-          <div className={fieldClassName}>
-            <div className="preview__resize" />
+          <div className={elementClassName}>
+            <div className={elementMetaClassName}>
+              {element.type}
+              {element.fieldType && ` ${element.fieldType}`}
+              {element.fieldSubtype && ` ${element.fieldSubtype}`}
+            </div>
+            {/*<div className="preview__resize" />*/}
             <div className="preview__content">
               <Component element={element} />
             </div>
-            <div
+            {/*<div
               className="preview__resize"
               onMouseDown={(e) => this.startResize(e, 'RIGHT')}
-            />
+            />*/}
           </div>
         </div>
       );

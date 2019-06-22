@@ -9,7 +9,7 @@ import { arrayFrom } from '../util/immutable';
 class FormBuilder extends React.Component {
 
   renderElements = () => {
-    console.log('this.props.elements', this.props.elements);
+    // console.log('this.props.elements', this.props.elements);
     return arrayFrom(this.props.elements).map(element => (
       <StructuralElement
         key={element.id}
