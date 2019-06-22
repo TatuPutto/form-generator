@@ -2,7 +2,8 @@ import React, { Fragment, PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import Row from './Row';
 // import Placeholder from './Placeholder';
-import NewFieldButton from '../NewFieldButton';
+import NewElementButton from '../NewFieldButton';
+// import NewElementButton from '../NewFieldButton';
 // import Text from './Text';
 
 class StructuralElement extends PureComponent {
@@ -10,12 +11,14 @@ class StructuralElement extends PureComponent {
     const element = this.props.element;
 
     switch (element.type) {
+      case 'INITIALIZER':
+        return NewElementButton;
       case 'ROW':
         return Row;
       case 'HR':
         return <hr />;
       default:
-        return NewFieldButton;
+        return NewElementButton;
     }
   }
 

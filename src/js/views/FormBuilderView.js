@@ -1,9 +1,10 @@
 import { connect } from 'react-redux';
 import FormBuilder from '../components/FormBuilder';
-import { combineElementsWithFields } from '../selectors';
+import { combineElementsWithChildren } from '../selectors';
 
 const mapStateToProps = (state) => ({
-  elements: combineElementsWithFields(state)
+  // elements: combineElementsWithFields(state)
+  elements: combineElementsWithChildren(state)
 });
 
 

@@ -1,7 +1,7 @@
 import { createSelector } from 'reselect';
 import get from 'lodash/get';
 import { arrayFrom } from './util/immutable';
-
+import { ROW, FIELD } from './types';
 
 export const getContent = (state) => get(state, ['builder', 'content']);
 
@@ -10,14 +10,24 @@ export const getElementsAsArray = createSelector(
   (content) => arrayFrom(get(content, 'elements'))
 );
 
+// export const getFieldsAsArray = createSelector(
+//   getContent,
+//   (content) => arrayFrom(get(content, 'fields'))
+// );
+
+export const getStructuralElementsAsArray = createSelector(
+  getElementsAsArray,
+  (elements) => elements.filter(element => element.type !== FIELD)
+);
+
 export const getFieldsAsArray = createSelector(
-  getContent,
-  (content) => arrayFrom(get(content, 'fields'))
+  getElementsAsArray,
+  (elements) => elements.filter(element => element.type === FIELD)
 );
 
 export const getRowsAsArray = createSelector(
   getElementsAsArray,
-  (elements) => elements.filter(element => element.type === 'ROW')
+  (elements) => elements.filter(element => element.type === ROW)
 );
 
 export const combineRowsWithFields = createSelector(
@@ -30,11 +40,11 @@ export const combineRowsWithFields = createSelector(
   }
 );
 
-export const combineElementsWithFields = createSelector(
-  [getElementsAsArray, getFieldsAsArray],
+export const combineElementsWithChildren = createSelector(
+  [getStructuralElementsAsArray, getFieldsAsArray],
   (elements, fields) => {
     return elements.map(element => {
-      if (element.type === 'ROW') {
+      if (element.type === ROW) {
         return {
           ...element,
           children: fields.filter(field => field.parentId === element.id)
@@ -44,6 +54,11 @@ export const combineElementsWithFields = createSelector(
       }
     });
   }
+);
+
+export const getSelectedElement = createSelector(
+  getElementsAsArray,
+  (elements) => elements.find(element => element.selected)
 );
 
 export const getSelectedField = createSelector(

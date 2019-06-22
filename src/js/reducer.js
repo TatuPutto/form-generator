@@ -14,43 +14,67 @@ import { getColWidth, getFieldMinWidth } from './util/field-helpers';
 
 const initialRowId = '1' /* newId(); */
 const initialFieldId = newId();
+const initialInitializerId = newId();
+
+const initialField = {
+  parentId: initialRowId,
+  type: 'FIELD',
+  selected: false,
+  initialized: false,
+  gridClass: 'col-lg-4 col-md-6 col-xs-12',
+  breakpoints: {
+    lg: 3,
+    md: 4,
+    sm: 6,
+    xs: 12
+  },
+  validate: true
+};
 
 const initialElements = {
-  [initialRowId]: {
-    type: 'ROW',
+  // [initialRowId]: {
+  //   type: 'ROW'
+  // },
+  // [initialFieldId]: {
+  //   parentId: initialRowId,
+  //   editing: false,
+  //   type: 'FIELD',
+  //   fieldType: 'INITIALIZER',
+  //   breakpoints: {
+  //     lg: 3,
+  //     md: 4,
+  //     sm: 6,
+  //     xs: 12
+  //   },
+  // },
+  [initialInitializerId]: {
+    type: 'INITIALIZER'
   }
+  // [initialRowId]: {
+  //   type: 'ROW'
+  // },
+  // [initialFieldId]: initialField
 };
+
+const initialElementOrder = [
+  // initialRowId,
+  initialInitializerId
+];
 
 const initialFieldOrder = {
   [initialRowId]: [initialFieldId]
 };
 
-const initialFields = {
-  [initialFieldId]: {
-    parentId: initialRowId,
-    selected: false,
-    initialized: false,
-    gridClass: 'col-lg-4 col-md-6 col-xs-12',
-    breakpoints: {
-      lg: 3,
-      md: 4,
-      sm: 6,
-      xs: 12
-    },
-    type: undefined,
-    validate: true
-  }
-};
 
 const initialState = {
   elements: initialElements,
-  fields: initialFields,
-  fieldOrder: initialFieldOrder
+  // fields: initialFields,
+  elementOrder: initialElementOrder,
+  fieldOrder: []
 };
 
 
 const actionsMap = (state, action) => {
-
 
   const actions = {
     ['ADD_NEW_ROW']: () => {
@@ -66,23 +90,81 @@ const actionsMap = (state, action) => {
         }
       };
     },
+
+    // ['CREATE_INITIALIZER_FIELD']: () => {
+    //   return {
+    //     ...state,
+    //     fieldOrder: {
+    //       ...state.fieldOrder,
+    //       [action.parentId]: push(state.fieldOrder[action.parentId], action.fieldId)
+    //     },
+    //     elements: {
+    //       ...state.elements,
+    //       [action.fieldId]: createInitializerField(action.parentId)
+    //     }
+    //     // fields: {
+    //     //   ...state.fields,
+    //     //   [action.fieldId]: createInitializerField(action.parentId)
+    //     // }
+    //   };
+    // },
+
     ['CREATE_INITIALIZER_FIELD']: () => {
       return {
         ...state,
         fieldOrder: {
           ...state.fieldOrder,
-          [action.parentId]: push(state.fieldOrder[action.parentId], action.fieldId)
+          [action.parentId]: push(state.fieldOrder[action.parentId], action.elementId)
         },
-        fields: {
-          ...state.fields,
-          [action.fieldId]: createInitializerField(action.parentId)
+        elements: {
+          ...state.elements,
+          [action.elementId]: createInitializerField(action.parentId)
         }
+        // fields: {
+        //   ...state.fields,
+        //   [action.fieldId]: createInitializerField(action.parentId)
+        // }
       };
     },
+
+    ['INITIALIZE_ELEMENT']: () => {
+      return {
+        ...state,
+        elements: {
+          ...state.elements,
+          [action.elementId]: {
+            ...state.elements[action.elementId],
+            initialized: true,
+            type: 'ROW'
+          }
+        },
+        fieldOrder: {
+          ...state.fieldOrder,
+          [action.elementId]: []
+        }
+      };
+      // return setElement(action.elementId, {
+      //   ...state.elements[action.elementId],
+      //   initialized: true,
+      //   type: 'ROW'
+      // });
+    },
+
+    ['SELECT_ELEMENT']: () => {
+      return togglePropValueForOtherElements(action.elementId, 'selected', true);
+    },
+
     ['INITIALIZE_FIELD']: () => {
-      return setFieldProp(action.fieldId, 'initialized', true);
+      // return setFieldProp(action.fieldId, 'initialized', true);
+      return setElement(action.fieldId, {
+        ...state.elements[action.fieldId],
+        initialized: true,
+        type: 'FIELD',
+        fieldType: 'TEXT'
+      });
     },
     ['SELECT_FIELD']: () => {
+      // return togglePropValueForOtherFields(action.fieldId, 'selected', true);
       return togglePropValueForOtherFields(action.fieldId, 'selected', true);
     },
     ['START_RESIZE']: () => {
@@ -164,7 +246,7 @@ const actionsMap = (state, action) => {
 
       const adjacentField = getField(adjacentFieldId);
 
-      console.log('adjacentFieldHasRoomToGrow()', adjacentFieldHasRoomToGrow());
+      // console.log('adjacentFieldHasRoomToGrow()', adjacentFieldHasRoomToGrow());
 
       if (!widthIncreased || adjacentFieldHasRoomToGrow()) {
         return setFieldProp(action.fieldId, 'temporaryWidth', action.width);
@@ -440,7 +522,7 @@ const actionsMap = (state, action) => {
   }
 
   function setField(path, value) {
-    return set({ ...state }, ['fields', path], value);
+    return set({ ...state }, ['elements', path], value);
   }
 
   function setFieldProp(path, prop, value) {
@@ -489,26 +571,55 @@ const actionsMap = (state, action) => {
     return set(state, 'fields', updatedFields);
   }
 
-  function togglePropValueForOtherFields(targetFieldIds, prop, value) {
-    targetFieldIds = Array.isArray(targetFieldIds) ? targetFieldIds : [targetFieldIds];
-    const updatedFields = Object.keys(state.fields).reduce((fields, fieldId) => {
-      const field = state.fields[fieldId];
-      if (targetFieldIds.includes(fieldId)) {
+  function togglePropValueForOtherElements(targetElementIds, prop, value) {
+    targetElementIds = Array.isArray(targetElementIds) ? targetElementIds : [targetElementIds];
+
+    const updatedElements = Object.keys(state.elements).reduce((elements, elementId) => {
+      const element = state.elements[elementId];
+      if (targetElementIds.includes(elementId)) {
         return {
-          ...fields,
-          [fieldId]: {
-            ...field,
+          ...elements,
+          [elementId]: {
+            ...element,
             [prop]: value
           }
         };
       } else {
         return {
-          ...fields,
-          [fieldId]: {
-            ...field,
+          ...elements,
+          [elementId]: {
+            ...element,
             [prop]: !value
           }
         };
+      }
+    }, {});
+
+    return set(state, 'elements', updatedElements);
+  }
+
+  function togglePropValueForOtherFields(targetFieldIds, prop, value) {
+    targetFieldIds = Array.isArray(targetFieldIds) ? targetFieldIds : [targetFieldIds];
+    const updatedFields = Object.keys(state.elements).reduce((fields, fieldId) => {
+      const element = state.elements[fieldId];
+      if (targetFieldIds.includes(fieldId)) {
+        return {
+          ...fields,
+          [fieldId]: {
+            ...element,
+            [prop]: value
+          }
+        };
+      } else if (element.type === 'FIELD') {
+        return {
+          ...fields,
+          [fieldId]: {
+            ...element,
+            [prop]: !value
+          }
+        };
+      } else {
+        return fields;
       }
     }, {});
 
@@ -550,7 +661,8 @@ const createEmptyField = (id, parentId) => {
     editing: true,
     gridClass: 'col-lg-4 col-sm-6 col-xs-12',
     breakpoints: createBreakpoints(),
-    type: 'PENDING'
+    type: 'FIELD',
+    fieldType: undefined
   };
 };
 
@@ -559,9 +671,27 @@ const createInitializerField = (parentId) => {
     // id: newId(),
     parentId: parentId,
     editing: false,
-    type: undefined,
-    gridClass: 'col-lg-4 col-md-6 col-xs-12',
+    // type: 'INITIALIZER',
+    type: 'FIELD',
+    fieldType: 'INITIALIZER',
+    // gridClass: 'col-lg-4 col-md-6 col-xs-12',
     breakpoints: createBreakpoints()
+    // width: {
+    //
+    // },
+  };
+};
+
+const createInitializer = (id) => {
+  return {
+    // id: newId(),
+    id,
+    // editing: false,
+    type: 'INITIALIZER',
+    // type: 'FIELD',
+    // fieldType: 'INITIALIZER',
+    // gridClass: 'col-lg-4 col-md-6 col-xs-12',
+    // breakpoints: createBreakpoints()
     // width: {
     //
     // },

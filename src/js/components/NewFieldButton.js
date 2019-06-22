@@ -33,15 +33,17 @@ const rowIsFull = (row) => {
 };
 
 const NewFieldButton = (props) => {
-  const { initializeField, element } = props;
-  const gridClass = createGridClass(element.breakpoints);
+  const { initializeElement, initializeField, element } = props;
+  const gridClass = element.type === 'FIELD' ?
+    createGridClass(element.breakpoints): null;
   // console.log('props', props);
+  // onClick={() => initializeField(props.rows, props.fields, element.id, element.parentId)}
   return (
     <div className={gridClass}>
       <button
         type="button"
         className="btn btn-outline-primary w-100"
-        onClick={() => initializeField(props.rows, props.fields, element.id, element.parentId)}
+        onClick={element.type === 'FIELD' ? () => initializeField(props.rows, element.id, element.parentId) : () => initializeElement(element.id)}
       >
         <span className="fas fa-plus" />
       </button>
@@ -55,7 +57,26 @@ export default connect(
     rows: combineRowsWithFields(state)
   }),
   (dispatch) => ({
-    initializeField: (rows, fields, fieldId, rowId) => {
+    initializeElement: (elementId, ) => {
+
+      // has to initialize element with type of undefined (maybe row)
+      dispatch({ type: 'INITIALIZE_ELEMENT', elementId });
+
+      console.log('täällä');
+
+      // has to create new initializer FIELD within row
+      dispatch({ type: 'CREATE_INITIALIZER_FIELD', elementId: newId(), parentId: elementId });
+
+      console.log('täällä2');
+
+      // has to select newly initializer element
+      dispatch({ type: 'SELECT_ELEMENT', elementId });
+
+      // has to create new initializer
+
+
+    },
+    initializeField: (rows, fieldId, rowId) => {
       const row = rows.find(row => row.id === rowId);
       const newRowId = (rows.length + 1).toString(); /*newId(); */
 

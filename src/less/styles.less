@@ -168,7 +168,7 @@ td:hover {
 }
 
 
-.field-preview {
+.preview {
   display: flex;
   align-items: center;
   height: 60px;
@@ -177,24 +177,28 @@ td:hover {
   border: 1px dotted transparent;
 }
 
-.field-preview.field-preview--initialized {
+.preview.preview--initialized {
   border-color: #565656;
 }
 
-.field-preview.field-preview--selected {
+.preview.preview--selected {
   border-color: #8e5d02;
 }
 
-.field-preview.field-preview--resizing {
+.preview.preview--resizing {
   border-color: red;
 }
 
-.field-preview__content {
+.preview.preview--row {
+  margin: 0 -15px 15px -15px;
+}
+
+.preview__content {
   flex-grow: 1;
   padding: 0 1rem;
 }
 
-.field-preview__resize {
+.preview__resize {
   width: 5px;
   height: 100%;
   cursor: e-resize;

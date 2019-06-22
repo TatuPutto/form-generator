@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { Badge, Button, InputGroup, InputGroupAddon, InputGroupText, Input } from 'reactstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import cn from 'classnames';
-import { getSelectedField } from '../selectors';
+import { getSelectedElement } from '../selectors';
 import {
   TEXT,
   TEXT_PLAIN,
@@ -13,6 +13,8 @@ import {
 class FieldConfiguration extends Component {
 
   render() {
+    // console.log('@FieldConfiguration', this.props);
+
     const {
       config: { subtypeOptionsVisible },
       field,
@@ -23,6 +25,8 @@ class FieldConfiguration extends Component {
       toggleSubtypeOptions
     } = this.props;
 
+    console.log('field', field);
+
     // const types = [
     //   'TEXT',
     //   'CHECKBOX',
@@ -30,10 +34,41 @@ class FieldConfiguration extends Component {
     //   'SELECTIZE'
     // ]
 
+    console.log('field is selected:', field && field.type && field.type !== 'PENDING');
+
     return (
       <div className="field-configuration">
 
+      {/*}
         {field &&
+          <Fragment>
+            <div
+              className="field-type-selection"
+            >
+              <span style={{ flexGrow: 1 }}>
+                <FontAwesomeIcon icon="font" className="mr-2" />
+                <span className="text-capitalize">
+                  {field.type.toLowerCase()}
+                </span>
+                {field.subtype &&
+                  <span className="text-muted ml-1">
+                    ({field.subtype.toLowerCase()})
+                  </span>
+                }
+              </span>
+              <button className="btn undo-selection" onClick={() => resetField()}>
+                <FontAwesomeIcon icon="times" className="pull-right" />
+              </button>
+            </div>
+          </Fragment>
+
+
+        }
+
+        */}
+
+        {field &&
+
 
           <Fragment>
 
@@ -266,7 +301,7 @@ class FieldConfiguration extends Component {
 
 export default connect(
   (state) => ({
-    field: getSelectedField(state),
+    field: getSelectedElement(state),
     config: state.builder.config
   }),
   (dispatch) => ({
